@@ -340,8 +340,6 @@ async def get_quiz_questions(
     data = []
     for question in questions[start:end]:
         choices = question["choices"]
-        if config.shuffle_choices:
-            random.shuffle(choices)
         data.append({
             "id": question["id"],
             "content": question["content"],
