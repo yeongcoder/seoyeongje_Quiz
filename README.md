@@ -25,11 +25,11 @@ poetry run apiserver
 Version: 0.1.0
 
 ### /users
-**GET - Get Users**
+#### GET - Get Users  
 Responses:
 - 200: Successful Response
 
-**POST - Post Users**
+#### POST - Post Users
 Request Body Content Types: application/json
 
 Responses:
@@ -40,7 +40,7 @@ description:
 유저 정보를 조회하는 api입니다.
 
 ### /auth/token
-**POST - Login**
+#### POST - Login
 Request Body Content Types: application/x-www-form-urlencoded
 
 Responses:
@@ -52,7 +52,7 @@ description:
     http://127.0.0.1:8000/docs에서 우측상단 Authorize버튼으로 자동 요청되는 엔드포인트입니다.
 
 ### /quizzes/
-**POST - Create Quiz**
+#### POST - Create Quiz 
 Request Body Content Types: application/json
 
 Responses:
@@ -62,7 +62,7 @@ Responses:
 description:
 퀴즈 생성 api입니다. 
 
-**GET - List Quizzes**
+#### GET - List Quizzes
 Parameters:
 - skip (integer, in: query) - Optional
 - limit (integer, in: query) - Optional
@@ -76,7 +76,7 @@ description:
     skip과 limit로 페이징이 가능하며 관리자에게만 QuizConfig값이 보입니다.
 
 ### /quizzes/{quiz_id}
-**PATCH - Update Quiz**
+#### PATCH - Update Quiz
 Parameters:
 - quiz_id (string, in: path) - Required
 - Request Body Content Types: application/json
@@ -89,7 +89,7 @@ description:
     퀴즈 수정 api입니다. 
     관리자만 사용 할 수 있으며 주로 QuizConfig값을 수정하는데 사용됩니다.
 
-**DELETE - Delete Quiz**
+#### DELETE - Delete Quiz
 Parameters:
 - quiz_id (string, in: path) - Required
 
@@ -101,7 +101,7 @@ description:
     퀴즈 삭제 api입니다. 
     관리자만 사용 할 수 있으며 Quiz의 id값을 참조하는 모든 테이블의 컬럼을 영구적으로 삭제합니다
 
-**GET - Get Quiz Questions**
+#### GET - Get Quiz Questions
 Parameters:
 - quiz_id (string, in: path) - Required
 - page (integer, in: query) - Optional
@@ -117,7 +117,7 @@ description:
     Quiz내의 Question을 페이징합니다.
 
 ### /quizzes/{quiz_id}/attempt
-**POST - Attempt Quiz**
+#### POST - Attempt Quiz
 Parameters:
 - quiz_id (string, in: path) - Required
 
@@ -132,7 +132,7 @@ description:
     이후 퀴즈 상세 조회 api를 요청 할 수 있습니다.
 
 ### /quizzes/{quiz_id}/answer
-**POST - Save Quiz Answers**
+#### POST - Save Quiz Answers
 Parameters:
 - quiz_id (string, in: path) - Required
 
@@ -149,7 +149,7 @@ description:
     해당 기능이 가능한 이유는 클라이언트 단에서 유저가 문항을 선택 할 때마다 이 api를 요청하면 되기 때문입니다.
 
 ### /quizzes/{quiz_id}/submit
-**POST - Submit Quiz Attempt**
+#### POST - Submit Quiz Attempt
 Parameters:
 - quiz_id (string, in: path) - Required
 
