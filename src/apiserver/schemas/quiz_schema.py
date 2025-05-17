@@ -75,6 +75,9 @@ class QuizOut(BaseModel):
     description: Optional[str]
     attempted: Optional[bool]
     config: Optional[QuizConfig]
+    created_by: Optional[UUID]
+    updated_at: Optional[datetime]
+    created_at: Optional[datetime]
 
     class Config:
         orm_mode = True

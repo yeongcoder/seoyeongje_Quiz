@@ -23,7 +23,7 @@ from apiserver.dependencies.auth import get_current_user, admin_required
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 # 1. 관리자 퀴즈 생성
-@router.post("/", response_model=QuizOut)
+@router.post("/")
 async def create_quiz(
     quiz_data: QuizCreate,
     db: AsyncSession = Depends(get_db),
@@ -72,7 +72,10 @@ async def create_quiz(
 
     await db.commit()
     await db.refresh(quiz)
-    return quiz
+    return {
+        "id": quiz.id,
+        "message": "Successfully Created"
+    }
 
 # # 2. 사용자/관리자 퀴즈 목록 조회 + 페이징
 @router.get("/", response_model=list[QuizOut])
@@ -131,6 +134,8 @@ async def update_quiz(
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
 
+    quiz.update_at = datetime.now()
+
     update_fields = quiz_data.model_dump(exclude_unset=True)
     
     result = await db.execute(select(QuizConfig).where(QuizConfig.quiz_id == quiz_id))
@@ -179,7 +184,10 @@ async def update_quiz(
 
     await db.commit()
     await db.refresh(quiz)
-    return quiz
+    return {
+        'quiz_id': quiz_id,
+        "message": "Successfully Update "
+    }
 
 # 4. 관리자 퀴즈 삭제
 @router.delete("/{quiz_id}", status_code=204)
@@ -281,7 +289,10 @@ async def attempt_quiz(
     await db.flush()
 
     await db.commit()
-    return {"attempt_id": attempt.id, "message": "Succesfully Attempt"}
+    return {
+        "attempt_id": attempt.id, 
+        "message": "Succesfully Attempt"
+    }
 
 # 6. 퀴즈 상세 조회 + 랜덤 문제 + 페이징
 @router.get("/{quiz_id}", response_model=QuizDetailOut)
@@ -395,7 +406,10 @@ async def save_quiz_answers(
         ))
 
     await db.commit()
-    return {"attempt_id": attempt.id, "message": "Answers saved temporarily"}
+    return {
+        "attempt_id": attempt.id, 
+        "message": "Successfully Saved"
+    }
 
 # 7.퀴즈 제출
 @router.post("/{quiz_id}/submit")
