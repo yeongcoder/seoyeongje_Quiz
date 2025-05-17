@@ -378,7 +378,7 @@ async def get_quiz_questions(
 
     questions = attempt.questions
 
-    total_pages = (len(questions) + per_page - 1) // per_page
+    total_pages = round((len(questions) + per_page - 1) / per_page)
     start = (page - 1) * per_page
     end = start + per_page
 
