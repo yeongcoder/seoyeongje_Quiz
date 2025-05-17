@@ -91,7 +91,8 @@ Responses:
 
 description:
 
-    퀴즈 수정 api입니다. 관리자만 사용 할 수 있으며 제목과 내용 그리고 QuizConfig값을 수정하는데 사용됩니다.
+    퀴즈 수정 api입니다. 
+    관리자만 사용 할 수 있으며 제목과 내용 그리고 QuizConfig값을 수정하는데 사용됩니다.
 
 #### DELETE - Delete Quiz
 Parameters:
@@ -103,7 +104,8 @@ Responses:
 
 description:
 
-    퀴즈 삭제 api입니다. 관리자만 사용 할 수 있으며 Quiz의 id값을 참조하는 모든 테이블의 컬럼을 영구적으로 삭제합니다
+    퀴즈 삭제 api입니다. 
+    관리자만 사용 할 수 있으며 Quiz의 id값을 참조하는 모든 테이블의 컬럼을 영구적으로 삭제합니다
 
 #### GET - Get Quiz Questions
 Parameters:
@@ -117,7 +119,8 @@ Responses:
 
 description:
 
-    퀴즈 상세 조회 api입니다. 유저가 응시한 Quiz에 대해서만 요청 할 수 있습니다. Quiz내의 Question을 페이징합니다.
+    퀴즈 상세 조회 api입니다. 
+    유저가 응시한 Quiz에 대해서만 요청 할 수 있습니다. Quiz내의 Question을 페이징합니다.
 
 ### /quizzes/{quiz_id}/attempt
 #### POST - Attempt Quiz
@@ -130,7 +133,10 @@ Responses:
 
 description:
 
-    퀴즈 응시 api입니다. 응시 후 QuizAttempt테이블이 생성되며 응시한 Question과 Choice들이 JSON타입의 컬럼으로 임베디드 됩니다. 이때 QuizConfig의 설정에 따라 어떤 문제들이 총 몇개로 저장될지와 랜덤배치여부를 결정합니다. 이후 퀴즈 상세 조회 api를 요청 할 수 있습니다.
+    퀴즈 응시 api입니다. 
+    응시 후 QuizAttempt테이블이 생성되며 응시한 Question과 Choice들이 JSON타입의 컬럼으로 임베디드 됩니다. 
+    이때 QuizConfig의 설정에 따라 어떤 문제들이 총 몇개로 저장될지와 랜덤배치여부를 결정합니다. 
+    이후 퀴즈 상세 조회 api를 요청 할 수 있습니다.
 
 ### /quizzes/{quiz_id}/answer
 #### POST - Save Quiz Answers
@@ -145,7 +151,9 @@ Responses:
 
 description:
 
-    응시내용 임시저장 api입니다.퀴즈 응시 후 퀴즈상세정보를 조회하고 이후 각 문제의 문항에서 정답을 선택한 후 요청되는 api입니다.이를 통해 응시 중 새로고침이 되어도 사용자가 체크한 답안이 그대로 남아있습니다.해당 기능이 가능한 이유는 클라이언트 단에서 유저가 문항을 선택 할 때마다 이 api를 요청하면 되기 때문입니다.
+    응시내용 임시저장 api입니다.
+    퀴즈 응시 후 퀴즈상세정보를 조회하고 이후 각 문제의 문항에서 정답을 선택한 후 요청되는 api입니다.이를 통해 응시 중 새로고침이 되어도 사용자가 체크한 답안이 그대로 남아있습니다.
+    해당 기능이 가능한 이유는 클라이언트 단에서 유저가 문항을 선택 할 때마다 이 api를 요청하면 되기 때문입니다.
 
 ### /quizzes/{quiz_id}/submit
 #### POST - Submit Quiz Attempt
@@ -158,7 +166,8 @@ Responses:
 
 description:
 
-    퀴즈 체점 api입니다. 선택된 문항이 정답인지 체크하여 각 문항당 1점씩 점수를 계산합니다.
+    퀴즈 체점 api입니다. 
+    선택된 문항이 정답인지 체크하여 각 문항당 1점씩 점수를 계산합니다.
 
 ## 참고
 데이터베이스 접속정보는 apiserver/db/database.py에 하드코딩되어있습니다.
