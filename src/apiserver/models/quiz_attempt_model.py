@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey, Text, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -13,7 +13,8 @@ class QuizAttempt(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     quiz_id = Column(UUID(as_uuid=True), ForeignKey("quizzes.id"))
-    started_at = Column(DateTime, default=datetime.utcnow)
+    questions = Column(JSONB, nullable=True)
+    started_at = Column(DateTime, default=datetime.now)
     submitted_at = Column(DateTime, nullable=True)
     score = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.now)

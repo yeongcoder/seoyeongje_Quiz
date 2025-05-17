@@ -52,12 +52,29 @@ class QuizUpdate(BaseModel):
             raise ValueError("At least two questions are required.")
         return v
 
+class QuizUpdateResponse(BaseModel):
+    id: UUID
+    title: str
+    description: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+class QuizConfig(BaseModel):
+    id: UUID
+    quiz_id: UUID
+    num_questions: int
+    shuffle_questions: bool
+    shuffle_choices: bool
+    created_at: datetime
+
 # 퀴즈 목록 응답
 class QuizOut(BaseModel):
     id: UUID
     title: str
     description: Optional[str]
-    attempted: bool
+    attempted: Optional[bool]
+    config: Optional[QuizConfig]
 
     class Config:
         orm_mode = True
@@ -66,6 +83,7 @@ class QuizOut(BaseModel):
 class ChoiceOut(BaseModel):
     id: UUID
     content: str
+    selected: bool
 
     class Config:
         orm_mode = True
@@ -74,7 +92,7 @@ class ChoiceOut(BaseModel):
 class QuestionOut(BaseModel):
     id: UUID
     content: str
-    correct_choice_id: UUID
+    correct_choice_id: UUID | None
     choices: List[ChoiceOut]
 
     class Config:
@@ -85,7 +103,6 @@ class QuizDetailOut(BaseModel):
     id: UUID
     title: str
     description: str
-    attempted: bool
     page: int
     per_page: int
     total_pages: int
@@ -104,14 +121,11 @@ class QuizAttemptResponse(BaseModel):
     total: int
     submitted_at: datetime
 
-# 퀴즈답변
-class Answer(BaseModel):
-    attempt_id: UUID
+# 퀴즈 응시 생성용 답변
+class AnswerCreate(BaseModel):
     question_id: UUID
     choice_id: UUID
-    is_correct: bool
-    answered_at: str
 
-# 퀴즈 응시 생성용
-class QuizAttemptCreate(BaseModel):
-    answer: List[Answer]
+# 응시내용 임시저장
+class AnswerSave(BaseModel):
+    answer: List[AnswerCreate]
