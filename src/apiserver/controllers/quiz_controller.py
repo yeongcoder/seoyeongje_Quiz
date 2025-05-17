@@ -216,7 +216,58 @@ async def delete_quiz(
 
     await db.commit()
 
-# 5.퀴즈 응시
+# 5. 관리자 퀴즈 상세 조회
+@router.get("/{quiz_id}/forstaff") #, response_model=QuizDetailResponseForStaff)
+async def get_quiz_questions(
+    quiz_id: UUID,
+    page: int = 1,
+    per_page: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    result = await db.execute(
+        select(Quiz)
+        .options(selectinload(Quiz.config))
+        .where(Quiz.id == quiz_id)
+    )
+    quiz = result.scalar_one_or_none()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    
+    config = quiz.config
+    if not config:
+        raise HTTPException(status_code=400, detail="Quiz config not found")
+
+    count_result = await db.execute(
+        select(func.count(Question.id))
+        .where(Question.quiz_id == quiz_id)
+    )
+    total = count_result.scalar()
+
+    offset = (page - 1) * per_page
+
+    result = await db.execute(
+        select(Question)
+        .where(Question.quiz_id == quiz_id)
+        .offset(offset)
+        .limit(per_page)
+    )
+    questions =  result.scalars().all()
+
+    return {
+        "title": quiz.title,
+        "description": quiz.description,
+        "created_by": quiz.created_by,
+        "created_at": quiz.created_at,
+        "updated_at": quiz.updated_at,
+        "config": quiz.config,
+        "questions": questions,
+        "total_pages": round(total/per_page),
+        "page": page,
+        "per_page": per_page
+    }
+
+# 6.퀴즈 응시
 @router.post("/{quiz_id}/attempt")
 async def attempt_quiz(
     quiz_id: UUID,
@@ -294,8 +345,8 @@ async def attempt_quiz(
         "message": "Succesfully Attempt"
     }
 
-# 6. 퀴즈 상세 조회 + 랜덤 문제 + 페이징
-@router.get("/{quiz_id}", response_model=QuizDetailOut)
+# 7. 퀴즈 상세 조회 + 랜덤 문제 + 페이징
+@router.get("/{quiz_id}/foruser", response_model=QuizDetailOut)
 async def get_quiz_questions(
     quiz_id: UUID,
     page: int = 1,
@@ -363,7 +414,7 @@ async def get_quiz_questions(
         "questions": data
     }
 
-# 5.응시내용 임시저장
+# 8.응시내용 임시저장
 @router.post("/{quiz_id}/answer")
 async def save_quiz_answers(
     quiz_id: UUID,
@@ -409,7 +460,7 @@ async def save_quiz_answers(
         "message": "Successfully Saved"
     }
 
-# 7.퀴즈 제출
+# 9.퀴즈 제출
 @router.post("/{quiz_id}/submit")
 async def submit_quiz_attempt(
     quiz_id: UUID,
