@@ -17,13 +17,13 @@ from apiserver.models.choice_model import Choice
 from apiserver.models.user_model import User
 from apiserver.models.quiz_attempt_model import QuizAttempt
 from apiserver.models.answer_model import Answer
-from apiserver.schemas.quiz_schema import QuizCreate, QuizUpdate, QuizUpdateResponse, AnswerSave, QuizOut, QuizDetailOut
+from apiserver.schemas.quiz_schema import QuizCreate, QuizUpdate, QuizUpdateResponse, QuizCreateResponse, QuizGetListResponse, QuizGetDetailForStaffResponse, QuizAttemptResponse, QuizGetDetailForUserResponse, QuizAnswerCreate, QuizAnswerCreateResponse, QuizSubmitResponse
 from apiserver.dependencies.auth import get_current_user, admin_required
 
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 # 1. 관리자 퀴즈 생성
-@router.post("/")
+@router.post("/", response_model=QuizCreateResponse)
 async def create_quiz(
     quiz_data: QuizCreate,
     db: AsyncSession = Depends(get_db),
@@ -73,12 +73,12 @@ async def create_quiz(
     await db.commit()
     await db.refresh(quiz)
     return {
-        "id": quiz.id,
+        "quiz_id": quiz.id,
         "message": "Successfully Created"
     }
 
 # # 2. 사용자/관리자 퀴즈 목록 조회 + 페이징
-@router.get("/") #, response_model=list[QuizOut])
+@router.get("/", response_model=QuizGetListResponse)
 async def list_quizzes(
     page: int = 1,
     per_page: int = 10,
@@ -229,7 +229,7 @@ async def delete_quiz(
     await db.commit()
 
 # 5. 관리자 퀴즈 상세 조회
-@router.get("/{quiz_id}/forstaff") #, response_model=QuizDetailResponseForStaff)
+@router.get("/{quiz_id}/forstaff", response_model=QuizGetDetailForStaffResponse)
 async def get_quiz_questions(
     quiz_id: UUID,
     page: int = 1,
@@ -280,7 +280,7 @@ async def get_quiz_questions(
     }
 
 # 6.퀴즈 응시
-@router.post("/{quiz_id}/attempt")
+@router.post("/{quiz_id}/attempt", response_model=QuizAttemptResponse)
 async def attempt_quiz(
     quiz_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -358,7 +358,7 @@ async def attempt_quiz(
     }
 
 # 7. 퀴즈 상세 조회 + 랜덤 문제 + 페이징
-@router.get("/{quiz_id}/foruser", response_model=QuizDetailOut)
+@router.get("/{quiz_id}/foruser", response_model=QuizGetDetailForUserResponse)
 async def get_quiz_questions(
     quiz_id: UUID,
     page: int = 1,
@@ -427,10 +427,10 @@ async def get_quiz_questions(
     }
 
 # 8.응시내용 임시저장
-@router.post("/{quiz_id}/answer")
+@router.post("/{quiz_id}/answer", response_model=QuizAnswerCreateResponse)
 async def save_quiz_answers(
     quiz_id: UUID,
-    answer_data: AnswerSave,
+    answer_data: QuizAnswerCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -473,7 +473,7 @@ async def save_quiz_answers(
     }
 
 # 9.퀴즈 제출
-@router.post("/{quiz_id}/submit")
+@router.post("/{quiz_id}/submit", response_model=QuizSubmitResponse)
 async def submit_quiz_attempt(
     quiz_id: UUID,
     db: AsyncSession = Depends(get_db),

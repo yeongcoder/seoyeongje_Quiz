@@ -3,12 +3,11 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-# 문항 생성용
+# POST /
 class ChoiceCreate(BaseModel):
     content: str
     is_correct: bool
 
-# 문제 생성용
 class QuestionCreate(BaseModel):
     content: str
     choices: List[ChoiceCreate]
@@ -20,7 +19,6 @@ class QuestionCreate(BaseModel):
             raise ValueError("At least one choice must be marked as correct.")
         return v
 
-# 퀴즈 생성용
 class QuizCreate(BaseModel):
     title: str
     description: Optional[str]
@@ -35,8 +33,39 @@ class QuizCreate(BaseModel):
         if len(v) < 2:
             raise ValueError("At least two questions are required.")
         return v
+    
+class QuizCreateResponse(BaseModel):
+    quiz_id: UUID
+    message: str
 
-# 퀴즈 수정용
+
+# GET /
+class QuizConfig(BaseModel):
+    quiz_id: UUID
+    num_questions: int
+    shuffle_choices: bool
+    id: UUID
+    shuffle_questions: bool
+    created_at: datetime
+
+class Quiz(BaseModel):
+    title: str
+    description: str
+    created_at: datetime
+    id: UUID
+    created_by: UUID
+    updated_at: datetime
+    config: Optional[QuizConfig]
+    attempted: bool
+
+class QuizGetListResponse(BaseModel):
+    quizzes: List[Quiz]
+    total_pages: int
+    page: int
+    per_page: int
+
+
+# PATCH /{quiz_id}
 class QuizUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
@@ -51,84 +80,74 @@ class QuizUpdate(BaseModel):
         if len(v) < 2:
             raise ValueError("At least two questions are required.")
         return v
-
+    
 class QuizUpdateResponse(BaseModel):
-    id: UUID
-    title: str
-    description: Optional[str]
-
-    class Config:
-        orm_mode = True
-
-class QuizConfig(BaseModel):
-    id: UUID
     quiz_id: UUID
-    num_questions: int
-    shuffle_questions: bool
-    shuffle_choices: bool
+    message: str
+
+
+# GET /{quiz_id}/forstaff
+class Question(BaseModel):
+    id: UUID
+    correct_choice_id: UUID
+    quiz_id: UUID
+    content: str
     created_at: datetime
 
-# 퀴즈 목록 응답
-class QuizOut(BaseModel):
-    id: UUID
+class QuizGetDetailForStaffResponse(BaseModel):
     title: str
-    description: Optional[str]
-    attempted: Optional[bool]
-    config: Optional[QuizConfig]
-    created_by: Optional[UUID]
-    updated_at: Optional[datetime]
-    created_at: Optional[datetime]
+    description: str
+    created_by: UUID
+    created_at: datetime
+    updated_at: datetime
+    config: QuizConfig
+    questions: List[Question]
+    total_pages: int
+    page: int
+    per_page: int
 
-    class Config:
-        orm_mode = True
 
-# 퀴즈 상세 응답
-class ChoiceOut(BaseModel):
+# POST /{quiz_id}/attempt
+class QuizAttemptResponse(BaseModel):
+    attempt_id: UUID 
+    message: str
+
+
+# GET /{quiz_id}/foruser
+class QuizQuestionChoice(BaseModel):
     id: UUID
     content: str
     selected: bool
 
-    class Config:
-        orm_mode = True
-
-# 문제 응답
-class QuestionOut(BaseModel):
+class QuizQuestion(BaseModel):
     id: UUID
     content: str
-    correct_choice_id: UUID | None
-    choices: List[ChoiceOut]
+    correct_choice_id: Optional[UUID]
+    choices: List[QuizQuestionChoice]
 
-    class Config:
-        orm_mode = True
-
-# 퀴즈 상세 응답
-class QuizDetailOut(BaseModel):
+class QuizGetDetailForUserResponse(BaseModel):
     id: UUID
     title: str
     description: str
     page: int
     per_page: int
     total_pages: int
-    questions: List[QuestionOut]
+    questions: List[QuizQuestion]
 
-    class Config:
-        orm_mode = True
-
-# 응시 요청
-class QuizAttemptRequest(BaseModel):
-    answers: List[UUID]  # 선택한 choice_id 리스트
-
-# 응시 결과 응답
-class QuizAttemptResponse(BaseModel):
-    score: int
-    total: int
-    submitted_at: datetime
-
-# 퀴즈 응시 생성용 답변
-class AnswerCreate(BaseModel):
+# POST /{quiz_id}/answer
+class QuizAnswer(BaseModel):
     question_id: UUID
     choice_id: UUID
 
-# 응시내용 임시저장
-class AnswerSave(BaseModel):
-    answer: List[AnswerCreate]
+class QuizAnswerCreate(BaseModel):
+    answer: List[QuizAnswer]
+
+class QuizAnswerCreateResponse(BaseModel):
+    attempt_id: UUID
+    message: str
+
+# POST /{quiz_id}/submit
+class QuizSubmitResponse(BaseModel):
+    attempt_id: UUID
+    score: int
+    submitted_at: datetime
