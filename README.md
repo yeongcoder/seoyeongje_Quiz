@@ -46,7 +46,7 @@ Version: 0.1.0
 #### 3. 퀴즈 상세 조회
 - **GET** `/quizzes/{quiz_id}/forstaff`: 퀴즈 상세 조회 (관리자용, `Question`에 대해 pagination 지원)
 
-- **GET** `/quizzes/{quiz_id}/foruser`: 퀴즈 상세 조회 (사용자용, `Question`에 대해 pagination 지원, `/quizzes/{quiz_id}/attempt`를 호출한 응시된 퀴즈에 대해서만 상세조회 가능)
+- **GET** `/quizzes/{quiz_id}/foruser`: 퀴즈 상세 조회 (사용자용, `Question`에 대해 pagination 지원, 응시된 퀴즈에 대해서만 상세조회 가능)
 
 #### 4. 퀴즈 응시 및 제출
 - **POST** `/quizzes/{quiz_id}/attempt`: 퀴즈 응시 시작 (attempt ID 반환)
