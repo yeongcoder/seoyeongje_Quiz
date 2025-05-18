@@ -251,12 +251,12 @@ async def get_quiz_questions(
     current_user: User = Depends(admin_required),
 ):
 
-    redis_key = str(request.url)
+    # redis_key = str(request.url)
 
-    cached_data = await redis_client.get(redis_key)
-    if cached_data:
-        cached_obj = QuizGetDetailForStaffResponse.model_validate_json(cached_data)
-        return cached_obj
+    # cached_data = await redis_client.get(redis_key)
+    # if cached_data:
+    #     cached_obj = QuizGetDetailForStaffResponse.model_validate_json(cached_data)
+    #     return cached_obj
 
     result = await db.execute(
         select(Quiz)
@@ -300,7 +300,7 @@ async def get_quiz_questions(
         per_page=per_page,
     )
 
-    await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
+    # await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
 
     return response_data
 
@@ -392,12 +392,13 @@ async def get_quiz_questions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    redis_key = str(request.url)
+    # 바로 바로 확인해야 하기 때문에 캐싱에서 제외
+    # redis_key = str(request.url)
 
-    cached_data = await redis_client.get(redis_key)
-    if cached_data:
-        cached_obj = QuizGetDetailForUserResponse.model_validate_json(cached_data)
-        return cached_obj
+    # cached_data = await redis_client.get(redis_key)
+    # if cached_data:
+    #     cached_obj = QuizGetDetailForUserResponse.model_validate_json(cached_data)
+    #     return cached_obj
 
 
     result = await db.execute(
@@ -459,7 +460,7 @@ async def get_quiz_questions(
         questions=data,
     )
 
-    await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
+    # await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
 
     return response_data
 
@@ -489,6 +490,9 @@ async def save_quiz_answers(
     )
 
     attempt = existing_attempt.scalar_one_or_none()
+
+    if attempt.submitted_at:
+        raise HTTPException(status_code=400, detail="Already submitted")
 
     # 이전 답안 삭제 후 다시 저장
     await db.execute(
@@ -527,7 +531,7 @@ async def submit_quiz_attempt(
     if not attempt:
         raise HTTPException(status_code=404, detail="No saved attempt found")
     if attempt.submitted_at:
-        raise HTTPException(status_code=400, detail="Already attempted")
+        raise HTTPException(status_code=400, detail="Already submitted")
 
 
     # 저장된 답변 불러오기
