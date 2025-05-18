@@ -47,8 +47,7 @@ async def get_users(
 @router.post("/users")
 async def post_users(
     user_data: UserCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(admin_required),
+    db: AsyncSession = Depends(get_db)
 ):
     user = User(
         name = user_data.name,
