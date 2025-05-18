@@ -1,9 +1,9 @@
 # seoyeongje_Quiz API Server
 
 ## 서버구동
-1. apiserver 디렉토리로 이동
+1. seoyeongje_Quiz 디렉토리로 이동
 ```sh
-cd apiserver
+cd seoyeongje_Quiz
 ```
 
 2. 의존성세팅
