@@ -78,15 +78,22 @@ async def create_quiz(
     }
 
 # # 2. 사용자/관리자 퀴즈 목록 조회 + 페이징
-@router.get("/", response_model=list[QuizOut])
+@router.get("/") #, response_model=list[QuizOut])
 async def list_quizzes(
-    skip: int = 0,
-    limit: int = 10,
+    page: int = 1,
+    per_page: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    attempt_alias = aliased(QuizAttempt)
+    count_result = await db.execute(
+        select(func.count(Quiz.id))
+    )
+    total = count_result.scalar()
+    offset = (page - 1) * per_page
+    total_pages = round(total/per_page)
 
+    attempt_alias = aliased(QuizAttempt)
+    
     stmt = (
         select(
             Quiz,
@@ -102,8 +109,8 @@ async def list_quizzes(
             ).label("attempted")
         )
         .options(selectinload(Quiz.config))
-        .offset(skip)
-        .limit(limit)
+        .offset(offset)
+        .limit(per_page)
     )
 
     result = await db.execute(stmt)
@@ -118,7 +125,12 @@ async def list_quizzes(
 
         quizzes_with_attempted.append(quiz)
 
-    return quizzes_with_attempted
+    return {
+        "quizzes": quizzes_with_attempted,
+        "total_pages": total_pages,
+        "page": page,
+        "per_page": per_page
+    }
 
 # 3. 관리자 퀴즈 수정
 @router.patch("/{quiz_id}", response_model=QuizUpdateResponse)
