@@ -3,7 +3,7 @@ from apiserver.controllers import user_controller
 from apiserver.controllers import auth_controller
 from apiserver.controllers import quiz_controller
 
-app = FastAPI(title="FastAPI MVC Example")
+app = FastAPI(title="seoyeongje_Quiz")
 
 # 라우터 등록
 app.include_router(user_controller.router)
