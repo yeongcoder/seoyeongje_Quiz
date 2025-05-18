@@ -6,8 +6,7 @@ from sqlalchemy.future import select
 
 from apiserver.db.database import get_db
 from apiserver.models.user_model import User
-from apiserver.utils.auth import verify_password, create_access_token
-from apiserver.utils.auth import hash_password
+from apiserver.utils.auth import verify_password, create_access_token, hash_password
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
