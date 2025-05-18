@@ -1,5 +1,5 @@
 # controllers/quiz_controller.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, aliased
@@ -17,8 +17,11 @@ from apiserver.models.choice_model import Choice
 from apiserver.models.user_model import User
 from apiserver.models.quiz_attempt_model import QuizAttempt
 from apiserver.models.answer_model import Answer
-from apiserver.schemas.quiz_schema import QuizCreate, QuizUpdate, QuizUpdateResponse, QuizCreateResponse, QuizGetListResponse, QuizGetDetailForStaffResponse, QuizAttemptResponse, QuizGetDetailForUserResponse, QuizAnswerCreate, QuizAnswerCreateResponse, QuizSubmitResponse
+from apiserver.schemas.quiz_schema import QuizCreate, QuizUpdate, QuizUpdateResponse, QuizCreateResponse, QuizResponse, QuizGetListResponse, QuizGetDetailForStaffResponse, QuizAttemptResponse, QuizGetDetailForUserResponse, QuizAnswerCreate, QuizAnswerCreateResponse, QuizSubmitResponse
 from apiserver.dependencies.auth import get_current_user, admin_required
+from apiserver.db.redis_client import redis_client
+import json
+import math
 
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
@@ -80,33 +83,38 @@ async def create_quiz(
 # # 2. 사용자/관리자 퀴즈 목록 조회 + 페이징
 @router.get("/", response_model=QuizGetListResponse)
 async def list_quizzes(
+    request: Request,
     page: int = 1,
     per_page: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    count_result = await db.execute(
-        select(func.count(Quiz.id))
-    )
+    redis_key = str(request.url.path) + "?" + str(request.url.query)
+
+    cached_data = await redis_client.get(redis_key)
+    if cached_data:
+        return QuizGetListResponse.model_validate(json.loads(cached_data))
+
+    count_result = await db.execute(select(func.count(Quiz.id)))
     total = count_result.scalar()
     offset = (page - 1) * per_page
-    total_pages = round(total/per_page)
+    total_pages = math.ceil(total / per_page)
 
     attempt_alias = aliased(QuizAttempt)
-    
+
     stmt = (
         select(
             Quiz,
             case(
                 (
                     exists().where(
-                        (attempt_alias.quiz_id == Quiz.id) &
-                        (attempt_alias.user_id == current_user.id)
+                        (attempt_alias.quiz_id == Quiz.id)
+                        & (attempt_alias.user_id == current_user.id)
                     ),
-                    literal(True)
+                    literal(True),
                 ),
-                else_=literal(False)
-            ).label("attempted")
+                else_=literal(False),
+            ).label("attempted"),
         )
         .options(selectinload(Quiz.config))
         .offset(offset)
@@ -120,17 +128,21 @@ async def list_quizzes(
         setattr(quiz, "attempted", attempted)
 
         if not current_user.is_admin:
-            # 일반 사용자라면 config를 None 처리하여 제외
             quiz.config = None
 
-        quizzes_with_attempted.append(quiz)
+        quiz_response = QuizResponse.model_validate(quiz)
+        quizzes_with_attempted.append(quiz_response)
 
-    return {
-        "quizzes": quizzes_with_attempted,
-        "total_pages": total_pages,
-        "page": page,
-        "per_page": per_page
-    }
+    response_data = QuizGetListResponse(
+        quizzes=quizzes_with_attempted,
+        total_pages=total_pages,
+        page=page,
+        per_page=per_page,
+    )
+
+    await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
+
+    return response_data
 
 # 3. 관리자 퀴즈 수정
 @router.patch("/{quiz_id}", response_model=QuizUpdateResponse)
@@ -231,12 +243,21 @@ async def delete_quiz(
 # 5. 관리자 퀴즈 상세 조회
 @router.get("/{quiz_id}/forstaff", response_model=QuizGetDetailForStaffResponse)
 async def get_quiz_questions(
+    request: Request,
     quiz_id: UUID,
     page: int = 1,
     per_page: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
+
+    redis_key = str(request.url)
+
+    cached_data = await redis_client.get(redis_key)
+    if cached_data:
+        cached_obj = QuizGetDetailForStaffResponse.model_validate_json(cached_data)
+        return cached_obj
+
     result = await db.execute(
         select(Quiz)
         .options(selectinload(Quiz.config))
@@ -245,7 +266,7 @@ async def get_quiz_questions(
     quiz = result.scalar_one_or_none()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
     config = quiz.config
     if not config:
         raise HTTPException(status_code=400, detail="Quiz config not found")
@@ -255,7 +276,6 @@ async def get_quiz_questions(
         .where(Question.quiz_id == quiz_id)
     )
     total = count_result.scalar()
-
     offset = (page - 1) * per_page
 
     result = await db.execute(
@@ -265,20 +285,24 @@ async def get_quiz_questions(
         .offset(offset)
         .limit(per_page)
     )
-    questions =  result.scalars().unique().all()
+    questions = result.scalars().unique().all()
 
-    return {
-        "title": quiz.title,
-        "description": quiz.description,
-        "created_by": quiz.created_by,
-        "created_at": quiz.created_at,
-        "updated_at": quiz.updated_at,
-        "config": quiz.config,
-        "questions": questions,
-        "total_pages": round(total/per_page),
-        "page": page,
-        "per_page": per_page
-    }
+    response_data = QuizGetDetailForStaffResponse(
+        title=quiz.title,
+        description=quiz.description,
+        created_by=quiz.created_by,
+        created_at=quiz.created_at.isoformat() if quiz.created_at else None,
+        updated_at=quiz.updated_at.isoformat() if quiz.updated_at else None,
+        config=quiz.config,
+        questions=questions,
+        total_pages=math.ceil(total / per_page),
+        page=page,
+        per_page=per_page,
+    )
+
+    await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
+
+    return response_data
 
 # 6.퀴즈 응시
 @router.post("/{quiz_id}/attempt", response_model=QuizAttemptResponse)
@@ -361,12 +385,21 @@ async def attempt_quiz(
 # 7. 퀴즈 상세 조회 + 랜덤 문제 + 페이징
 @router.get("/{quiz_id}/foruser", response_model=QuizGetDetailForUserResponse)
 async def get_quiz_questions(
+    request: Request,
     quiz_id: UUID,
     page: int = 1,
     per_page: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    redis_key = str(request.url)
+
+    cached_data = await redis_client.get(redis_key)
+    if cached_data:
+        cached_obj = QuizGetDetailForUserResponse.model_validate_json(cached_data)
+        return cached_obj
+
+
     result = await db.execute(
         select(Quiz)
         .options(selectinload(Quiz.config))
@@ -375,7 +408,7 @@ async def get_quiz_questions(
     quiz = result.scalar_one_or_none()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
     config = quiz.config
     if not config:
         raise HTTPException(status_code=400, detail="Quiz config not found")
@@ -391,11 +424,10 @@ async def get_quiz_questions(
 
     questions = attempt.questions
 
-    total_pages = round((len(questions) + per_page - 1) / per_page)
+    total_pages = math.ceil((len(questions) + per_page - 1) / per_page)
     start = (page - 1) * per_page
     end = start + per_page
 
-    # 저장된 답변 불러오기
     result = await db.execute(
         select(Answer).where(Answer.attempt_id == attempt.id)
     )
@@ -410,22 +442,26 @@ async def get_quiz_questions(
             "correct_choice_id": None,
             "choices": [
                 {
-                    "id": choice["id"], 
+                    "id": choice["id"],
                     "content": choice["content"],
-                    "selected": True if next((ans for ans in answers if str(ans.choice_id) == str(choice["id"])), None) else False,
+                    "selected": any(str(ans.choice_id) == str(choice["id"]) for ans in answers),
                 } for choice in choices
             ]
         })
 
-    return {
-        "id": quiz.id,
-        "title": quiz.title,
-        "description": quiz.description,
-        "page": page,
-        "per_page": per_page,
-        "total_pages": total_pages,
-        "questions": data
-    }
+    response_data = QuizGetDetailForUserResponse(
+        id=quiz.id,
+        title=quiz.title,
+        description=quiz.description,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        questions=data,
+    )
+
+    await redis_client.set(redis_key, response_data.model_dump_json(), ex=60)
+
+    return response_data
 
 # 8.응시내용 임시저장
 @router.post("/{quiz_id}/answer", response_model=QuizAnswerCreateResponse)

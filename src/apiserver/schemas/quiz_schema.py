@@ -48,7 +48,11 @@ class QuizConfig(BaseModel):
     shuffle_questions: bool
     created_at: datetime
 
-class Quiz(BaseModel):
+    model_config = {
+        "from_attributes": True,
+    }
+
+class QuizResponse(BaseModel):
     title: str
     description: str
     created_at: datetime
@@ -58,11 +62,18 @@ class Quiz(BaseModel):
     config: Optional[QuizConfig]
     attempted: bool
 
+    model_config = {
+        "from_attributes": True,
+    }
+
 class QuizGetListResponse(BaseModel):
-    quizzes: List[Quiz]
+    quizzes: List[QuizResponse]
     total_pages: int
     page: int
     per_page: int
+
+    class Config:
+        orm_mode = True
 
 
 # PATCH /{quiz_id}
@@ -93,6 +104,10 @@ class QuestionChoice(BaseModel):
     question_id: UUID
     content: str
     
+    model_config = {
+        "from_attributes": True,
+    }
+    
 class Question(BaseModel):
     id: UUID
     correct_choice_id: UUID
@@ -100,6 +115,10 @@ class Question(BaseModel):
     content: str
     created_at: datetime
     choices: List[QuestionChoice]
+
+    model_config = {
+        "from_attributes": True,
+    }
 
 class QuizGetDetailForStaffResponse(BaseModel):
     title: str
@@ -113,6 +132,9 @@ class QuizGetDetailForStaffResponse(BaseModel):
     page: int
     per_page: int
 
+    class Config:
+        orm_mode = True
+
 
 # POST /{quiz_id}/attempt
 class QuizAttemptResponse(BaseModel):
@@ -125,12 +147,20 @@ class QuizQuestionChoice(BaseModel):
     id: UUID
     content: str
     selected: bool
+    
+    model_config = {
+        "from_attributes": True,
+    }
 
 class QuizQuestion(BaseModel):
     id: UUID
     content: str
     correct_choice_id: Optional[UUID]
     choices: List[QuizQuestionChoice]
+    
+    model_config = {
+        "from_attributes": True,
+    }
 
 class QuizGetDetailForUserResponse(BaseModel):
     id: UUID
@@ -140,6 +170,9 @@ class QuizGetDetailForUserResponse(BaseModel):
     per_page: int
     total_pages: int
     questions: List[QuizQuestion]
+    
+    class Config:
+        orm_mode = True
 
 # POST /{quiz_id}/answer
 class QuizAnswer(BaseModel):
