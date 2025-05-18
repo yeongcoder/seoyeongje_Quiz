@@ -87,12 +87,19 @@ class QuizUpdateResponse(BaseModel):
 
 
 # GET /{quiz_id}/forstaff
+class QuestionChoice(BaseModel):
+    created_at: datetime
+    id: UUID
+    question_id: UUID
+    content: str
+    
 class Question(BaseModel):
     id: UUID
     correct_choice_id: UUID
     quiz_id: UUID
     content: str
     created_at: datetime
+    choices: List[QuestionChoice]
 
 class QuizGetDetailForStaffResponse(BaseModel):
     title: str

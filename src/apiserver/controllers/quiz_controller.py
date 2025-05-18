@@ -261,10 +261,11 @@ async def get_quiz_questions(
     result = await db.execute(
         select(Question)
         .where(Question.quiz_id == quiz_id)
+        .options(selectinload(Question.choices))
         .offset(offset)
         .limit(per_page)
     )
-    questions =  result.scalars().all()
+    questions =  result.scalars().unique().all()
 
     return {
         "title": quiz.title,
