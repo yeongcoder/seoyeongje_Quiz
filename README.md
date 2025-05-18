@@ -71,7 +71,7 @@ Version: 0.1.0
 
 ## 참고
 - API문서는 http://127.0.0.1:8000/docs 에서 확인 가능합니다.
-- 데이터베이스 접속정보는 apiserver/db/database.py에 하드코딩되어있습니다.
+- 데이터베이스 접속정보는 apiserver/db/database.py와 apiserver/db/redis_client.py에 설정되어있습니다.
 
 이 외의 별도의 세팅은 필요하지 않습니다.
 
