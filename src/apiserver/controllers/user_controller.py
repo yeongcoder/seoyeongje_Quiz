@@ -7,6 +7,7 @@ from apiserver.utils.auth import hash_password
 from sqlalchemy.future import select
 from apiserver.dependencies.auth import get_current_user, admin_required
 from sqlalchemy.orm import class_mapper
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -16,13 +17,32 @@ async def get_db():
 
 @router.get("/users")
 async def get_users(
+    page: int = 1,
+    per_page: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(admin_required)
 ):
+    count_result = await db.execute(
+        select(func.count(User.id))
+    )
+    total = count_result.scalar()
+    offset = (page - 1) * per_page
+    total_pages = round(total/per_page)
+
     columns = [column for column in class_mapper(User).columns if column.name != 'password']
-    result = await db.execute(select(*columns))
+    result = await db.execute(
+        select(*columns)
+        .offset(offset)
+        .limit(per_page)
+    )
     users = [dict(row._mapping) for row in result.all()]
-    return users
+    return {
+        "users": users,
+        "total_pages": total_pages,
+        "page": page,
+        "per_page": per_page
+
+    }
 
 @router.post("/users")
 async def post_users(
